@@ -144,11 +144,73 @@ h2 {
   display: none;
 }
 
-.install--ios p {
+.install--ios {
+  display: grid;
+  gap: 14px;
+  border-color: rgba(214, 140, 69, 0.48);
+  background:
+    linear-gradient(135deg, rgba(214, 140, 69, 0.13), rgba(15, 76, 92, 0.06)),
+    var(--surface);
+}
+
+.ios-install__header {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.ios-install__mark {
+  display: inline-flex;
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.ios-install__header h2 {
+  font-size: 1.18rem;
+}
+
+.ios-steps {
+  display: grid;
+  gap: 10px;
   margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.45;
+  padding: 0;
+  list-style: none;
+}
+
+.ios-steps li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.ios-steps span {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(214, 140, 69, 0.18);
+  color: var(--primary-strong);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.ios-steps p {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.38;
 }
 
 .primary-button {

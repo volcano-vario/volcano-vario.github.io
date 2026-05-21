@@ -1,5 +1,5 @@
 const AUDIO_CACHE = 'kore-audio-v1';
-const STATIC_CACHE = 'kore-static-v1';
+const STATIC_CACHE = 'kore-static-v3';
 
 const TRACKS = [
   { number: 1, title: 'Запись 1', src: 'data/legends/kore_female/poi_1_kore.mp3' },
