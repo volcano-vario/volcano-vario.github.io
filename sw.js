@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'kore-static-v4';
+const STATIC_CACHE = 'kore-static-v5';
 const AUDIO_CACHE = 'kore-audio-v1';
 
 const APP_SHELL = [

@@ -1,5 +1,5 @@
 const AUDIO_CACHE = 'kore-audio-v1';
-const STATIC_CACHE = 'kore-static-v4';
+const STATIC_CACHE = 'kore-static-v5';
 
 const TRACKS = [
   { number: 1, title: 'Запись 1', src: 'data/legends/kore_female/poi_1_kore.mp3' },
@@ -31,6 +31,9 @@ const elements = {
   audio: document.querySelector('#audio'),
   androidInstall: document.querySelector('#androidInstall'),
   badge: document.querySelector('#connectionBadge'),
+  copyDebug: document.querySelector('#copyDebug'),
+  debugLog: document.querySelector('#debugLog'),
+  debugPanel: document.querySelector('#debugPanel'),
   currentTitle: document.querySelector('#currentTitle'),
   downloadText: document.querySelector('#downloadText'),
   downloadTitle: document.querySelector('#downloadTitle'),
@@ -47,6 +50,147 @@ let activeTrackIndex = -1;
 let activeObjectUrl;
 let audioReady = false;
 let preloadInProgress = false;
+const debugRequested = new URLSearchParams(window.location.search).has('debug');
+const debugLines = [];
+let debugVisible = debugRequested;
+let debugCopyReady = false;
+
+function formatBytes(value) {
+  if (!Number.isFinite(value)) {
+    return 'unknown';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = value;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function updateDebugPanel() {
+  if (!debugVisible || !elements.debugLog) {
+    return;
+  }
+
+  elements.debugLog.textContent = debugLines.join('\n');
+}
+
+function logDebug(message, details) {
+  const time = new Date().toISOString();
+  let line = `[${time}] ${message}`;
+
+  if (details !== undefined) {
+    try {
+      line += ` ${JSON.stringify(details)}`;
+    } catch (error) {
+      line += ` ${String(details)}`;
+    }
+  }
+
+  debugLines.push(line);
+  if (debugLines.length > 260) {
+    debugLines.shift();
+  }
+  updateDebugPanel();
+}
+
+async function getCachedTrackCount() {
+  if (!('caches' in window)) {
+    return 0;
+  }
+
+  const cache = await caches.open(AUDIO_CACHE);
+  return countCachedTracks(cache);
+}
+
+async function readDebugSnapshot() {
+  const storageEstimate = navigator.storage?.estimate
+    ? await navigator.storage.estimate().catch((error) => ({ error: error.message }))
+    : null;
+  const registration = navigator.serviceWorker?.getRegistration
+    ? await navigator.serviceWorker.getRegistration().catch((error) => ({ error: error.message }))
+    : null;
+  const cacheNames = 'caches' in window
+    ? await caches.keys().catch((error) => [`error: ${error.message}`])
+    : [];
+  const cachedTracks = await getCachedTrackCount().catch((error) => `error: ${error.message}`);
+
+  return {
+    url: window.location.href,
+    origin: window.location.origin,
+    standalone: isStandalone(),
+    secureContext: window.isSecureContext,
+    online: navigator.onLine,
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    cachesAvailable: 'caches' in window,
+    serviceWorkerAvailable: 'serviceWorker' in navigator,
+    serviceWorkerControlled: Boolean(navigator.serviceWorker?.controller),
+    serviceWorkerScope: registration?.scope || null,
+    serviceWorkerActiveState: registration?.active?.state || null,
+    cacheNames,
+    cachedTracks,
+    audioReady,
+    preloadInProgress,
+    progress: elements.progressBar?.getAttribute('aria-valuenow') || null,
+    storageUsage: storageEstimate?.usage ? formatBytes(storageEstimate.usage) : null,
+    storageQuota: storageEstimate?.quota ? formatBytes(storageEstimate.quota) : null,
+    storageError: storageEstimate?.error || null,
+  };
+}
+
+async function logDebugSnapshot(label) {
+  logDebug(label, await readDebugSnapshot().catch((error) => ({ error: error.message })));
+}
+
+async function copyDebugLog() {
+  const text = elements.debugLog?.textContent || '';
+  if (!text) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    elements.copyDebug.textContent = 'Скопировано';
+    setTimeout(() => {
+      elements.copyDebug.textContent = 'Скопировать';
+    }, 1800);
+  } catch (error) {
+    elements.copyDebug.textContent = 'Не скопировалось';
+    logDebug('copy failed', { error: error.message });
+  }
+}
+
+function setupDebugPanel() {
+  if (!elements.debugPanel) {
+    return;
+  }
+
+  if (!debugCopyReady) {
+    elements.copyDebug?.addEventListener('click', copyDebugLog);
+    debugCopyReady = true;
+  }
+
+  if (debugVisible) {
+    elements.debugPanel.hidden = false;
+    updateDebugPanel();
+  }
+}
+
+function showDebugPanel(reason) {
+  if (!elements.debugPanel) {
+    return;
+  }
+
+  debugVisible = true;
+  setupDebugPanel();
+  logDebug('debug panel shown', { reason });
+}
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -100,6 +244,7 @@ function setErrorState(done) {
   }
   setProgress(done, TRACKS.length);
   setTrackButtonsDisabled(false);
+  showDebugPanel('download error');
 }
 
 function setTrackButtonsDisabled(disabled) {
@@ -137,20 +282,34 @@ function markActiveTrack(index) {
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
+    logDebug('service worker unavailable');
     return;
   }
 
-  await navigator.serviceWorker.register('./sw.js');
+  logDebug('service worker register start');
+  const registration = await navigator.serviceWorker.register('./sw.js');
+  logDebug('service worker registered', {
+    scope: registration.scope,
+    active: registration.active?.state || null,
+    installing: registration.installing?.state || null,
+    waiting: registration.waiting?.state || null,
+  });
   await navigator.serviceWorker.ready;
+  logDebug('service worker ready', {
+    controlled: Boolean(navigator.serviceWorker.controller),
+  });
 }
 
 async function cacheAppShell() {
   if (!('caches' in window)) {
+    logDebug('app shell cache skipped: caches unavailable');
     return;
   }
 
+  logDebug('app shell cache start', { files: appFiles.length });
   const cache = await caches.open(STATIC_CACHE);
   await cache.addAll(appFiles);
+  logDebug('app shell cache done');
 }
 
 function trackUrl(track) {
@@ -175,6 +334,7 @@ async function countCachedTracks(cache) {
 
 async function preloadAudio() {
   if (preloadInProgress) {
+    logDebug('audio preload skipped: already running');
     return;
   }
 
@@ -185,10 +345,12 @@ async function preloadAudio() {
 
   preloadInProgress = true;
   let completed = 0;
+  logDebug('audio preload start', { tracks: TRACKS.length });
 
   try {
     const cache = await caches.open(AUDIO_CACHE);
     completed = await countCachedTracks(cache);
+    logDebug('audio cache counted', { completed, total: TRACKS.length });
 
     setLoadingState(completed);
     setProgress(completed, TRACKS.length);
@@ -204,6 +366,7 @@ async function preloadAudio() {
 
       if (!cached) {
         elements.downloadText.textContent = `Загружаю ${track.title}: ${completed + 1} из ${TRACKS.length}`;
+        logDebug('audio fetch start', { track: track.number, url });
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -213,12 +376,27 @@ async function preloadAudio() {
         await cache.put(url, response.clone());
         completed += 1;
         setProgress(completed, TRACKS.length);
+        logDebug('audio fetch cached', {
+          track: track.number,
+          completed,
+          total: TRACKS.length,
+          status: response.status,
+        });
+      } else {
+        logDebug('audio already cached', { track: track.number });
       }
     }
 
     setReadyState();
+    logDebugSnapshot('audio preload done');
   } catch (error) {
     setErrorState(completed);
+    logDebug('audio preload failed', {
+      completed,
+      error: error.message,
+      name: error.name,
+    });
+    logDebugSnapshot('failure snapshot');
     throw error;
   } finally {
     preloadInProgress = false;
@@ -231,6 +409,7 @@ async function getTrackBlobUrl(track) {
   let response = await cache.match(url);
 
   if (!response) {
+    logDebug('playback cache miss, fetching track', { track: track.number });
     response = await fetch(url);
     if (!response.ok) {
       throw new Error(`${track.title}: ${response.status}`);
@@ -256,9 +435,11 @@ async function playTrack(index) {
     activeObjectUrl = await getTrackBlobUrl(track);
     elements.audio.src = activeObjectUrl;
     await elements.audio.play();
+    logDebug('playback started', { track: track.number });
   } catch (error) {
     elements.currentTitle.textContent = 'Не удалось открыть запись';
     elements.downloadText.textContent = 'Проверьте подключение и обновите страницу.';
+    logDebug('playback failed', { track: track.number, error: error.message });
     console.error(error);
   }
 }
@@ -298,6 +479,7 @@ function setupInstallUi() {
     deferredInstallPrompt = event;
     elements.androidInstall.hidden = false;
     elements.installButton.disabled = false;
+    logDebug('beforeinstallprompt received');
   });
 
   elements.installButton.addEventListener('click', async () => {
@@ -307,6 +489,7 @@ function setupInstallUi() {
 
     deferredInstallPrompt.prompt();
     await deferredInstallPrompt.userChoice;
+    logDebug('install prompt finished');
     deferredInstallPrompt = undefined;
     elements.installButton.disabled = true;
   });
@@ -314,9 +497,11 @@ function setupInstallUi() {
 
 async function prepareAppShell() {
   try {
+    logDebug('prepare app shell start');
     await registerServiceWorker();
     await cacheAppShell();
   } catch (error) {
+    logDebug('prepare app shell failed', { error: error.message, name: error.name });
     console.warn('App shell cache failed', error);
   }
 }
@@ -329,21 +514,31 @@ async function prepareOfflineAudio() {
   }
 }
 
+setupDebugPanel();
+logDebug('app boot', { debugRequested });
+logDebugSnapshot('initial snapshot');
 renderTracks();
 setupInstallUi();
 elements.audio.addEventListener('ended', playNextTrack);
 elements.retryDownload?.addEventListener('click', prepareOfflineAudio);
 window.addEventListener('online', () => {
+  logDebug('browser online event');
   if (!audioReady) {
     prepareOfflineAudio();
   }
 });
+window.addEventListener('offline', () => {
+  logDebug('browser offline event');
+  logDebugSnapshot('offline snapshot');
+});
 window.addEventListener('pageshow', () => {
+  logDebug('pageshow event');
   if (!audioReady) {
     prepareOfflineAudio();
   }
 });
 document.addEventListener('visibilitychange', () => {
+  logDebug('visibilitychange event', { hidden: document.hidden });
   if (!document.hidden && !audioReady) {
     prepareOfflineAudio();
   }

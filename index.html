@@ -83,6 +83,18 @@
         <h2 id="track-list-title">Записи</h2>
         <div id="trackList" class="track-list"></div>
       </section>
+
+      <section id="debugPanel" class="debug-panel" hidden aria-labelledby="debug-title">
+        <div class="debug-panel__header">
+          <div>
+            <p class="eyebrow">Диагностика</p>
+            <h2 id="debug-title">Лог загрузки</h2>
+          </div>
+          <button id="copyDebug" class="secondary-button debug-panel__copy" type="button">Скопировать</button>
+        </div>
+        <p class="debug-panel__hint">Пришлите этот текст, если аудио не загрузилось.</p>
+        <pre id="debugLog" class="debug-log"></pre>
+      </section>
     </main>
   </body>
 </html>
