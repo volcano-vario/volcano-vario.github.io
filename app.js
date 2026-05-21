@@ -1,5 +1,5 @@
 const AUDIO_CACHE = 'kore-audio-v1';
-const STATIC_CACHE = 'kore-static-v5';
+const STATIC_CACHE = 'kore-static-v6';
 
 const TRACKS = [
   { number: 1, title: 'Запись 1', src: 'data/legends/kore_female/poi_1_kore.mp3' },
@@ -18,8 +18,8 @@ const TRACKS = [
 const appFiles = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
+  './styles.css?v=6',
+  './app.js?v=6',
   './sw.js',
   './manifest.webmanifest',
   './icon.svg',

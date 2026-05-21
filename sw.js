@@ -1,11 +1,11 @@
-const STATIC_CACHE = 'kore-static-v5';
+const STATIC_CACHE = 'kore-static-v6';
 const AUDIO_CACHE = 'kore-audio-v1';
 
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
+  './styles.css?v=6',
+  './app.js?v=6',
   './sw.js',
   './manifest.webmanifest',
   './icon.svg',
@@ -44,30 +44,56 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirst(event.request, STATIC_CACHE, './index.html'));
+    return;
+  }
 
-        return fetch(event.request)
-          .then((networkResponse) => {
-            if (!networkResponse || networkResponse.status !== 200) {
-              return networkResponse;
-            }
+  if (event.request.destination === 'audio' || requestUrl.pathname.endsWith('.mp3')) {
+    event.respondWith(cacheFirst(event.request, AUDIO_CACHE));
+    return;
+  }
 
-            const responseClone = networkResponse.clone();
-            const cacheName = event.request.destination === 'audio' ? AUDIO_CACHE : STATIC_CACHE;
-            caches.open(cacheName).then((cache) => cache.put(event.request, responseClone));
-            return networkResponse;
-          })
-          .catch(() => {
-            if (event.request.mode === 'navigate') {
-              return caches.match('./index.html');
-            }
-            return Response.error();
-          });
-      }),
-  );
+  event.respondWith(networkFirst(event.request, STATIC_CACHE));
 });
+
+async function cacheFirst(request, cacheName) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  const networkResponse = await fetch(request);
+  if (networkResponse && networkResponse.status === 200) {
+    const cache = await caches.open(cacheName);
+    await cache.put(request, networkResponse.clone());
+  }
+
+  return networkResponse;
+}
+
+async function networkFirst(request, cacheName, fallbackUrl) {
+  const cache = await caches.open(cacheName);
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse && networkResponse.status === 200) {
+      await cache.put(fallbackUrl || request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    if (fallbackUrl) {
+      const fallbackResponse = await caches.match(fallbackUrl);
+      if (fallbackResponse) {
+        return fallbackResponse;
+      }
+    }
+
+    return Response.error();
+  }
+}
