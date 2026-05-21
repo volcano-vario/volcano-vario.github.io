@@ -234,6 +234,25 @@ h2 {
   transform: translateY(1px);
 }
 
+.secondary-button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(15, 76, 92, 0.25);
+  border-radius: 8px;
+  background: #edf4f1;
+  color: var(--primary-strong);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.secondary-button[hidden] {
+  display: none;
+}
+
+.secondary-button:active {
+  transform: translateY(1px);
+}
+
 .player {
   display: grid;
   gap: 14px;

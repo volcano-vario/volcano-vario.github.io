@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'kore-static-v3';
+const STATIC_CACHE = 'kore-static-v4';
 const AUDIO_CACHE = 'kore-audio-v1';
 
 const APP_SHELL = [
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
             if (event.request.mode === 'navigate') {
               return caches.match('./index.html');
             }
-            return undefined;
+            return Response.error();
           });
       }),
   );

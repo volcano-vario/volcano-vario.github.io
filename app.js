@@ -1,5 +1,5 @@
 const AUDIO_CACHE = 'kore-audio-v1';
-const STATIC_CACHE = 'kore-static-v3';
+const STATIC_CACHE = 'kore-static-v4';
 
 const TRACKS = [
   { number: 1, title: 'Запись 1', src: 'data/legends/kore_female/poi_1_kore.mp3' },
@@ -38,12 +38,15 @@ const elements = {
   iosInstall: document.querySelector('#iosInstall'),
   progressBar: document.querySelector('#progressBar'),
   progressFill: document.querySelector('#progressFill'),
+  retryDownload: document.querySelector('#retryDownload'),
   trackList: document.querySelector('#trackList'),
 };
 
 let deferredInstallPrompt;
 let activeTrackIndex = -1;
 let activeObjectUrl;
+let audioReady = false;
+let preloadInProgress = false;
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -64,11 +67,38 @@ function setProgress(done, total) {
 }
 
 function setReadyState() {
+  audioReady = true;
   elements.downloadTitle.textContent = 'Готово офлайн';
   elements.downloadText.textContent = `Загружено ${TRACKS.length} записей. Можно слушать без интернета.`;
   elements.badge.textContent = 'Офлайн готов';
   elements.badge.classList.add('is-ready');
+  if (elements.retryDownload) {
+    elements.retryDownload.hidden = true;
+  }
   setProgress(TRACKS.length, TRACKS.length);
+  setTrackButtonsDisabled(false);
+}
+
+function setLoadingState(done) {
+  elements.downloadTitle.textContent = done > 0 ? 'Докачиваю аудио' : 'Загрузка аудио';
+  elements.badge.textContent = 'Загрузка';
+  elements.badge.classList.remove('is-ready');
+  if (elements.retryDownload) {
+    elements.retryDownload.hidden = true;
+  }
+  setTrackButtonsDisabled(true);
+}
+
+function setErrorState(done) {
+  audioReady = false;
+  elements.downloadTitle.textContent = 'Загрузка не завершилась';
+  elements.downloadText.textContent = `Загружено ${done} из ${TRACKS.length}. Откройте приложение с интернетом и повторите загрузку.`;
+  elements.badge.textContent = 'Не готово';
+  elements.badge.classList.remove('is-ready');
+  if (elements.retryDownload) {
+    elements.retryDownload.hidden = false;
+  }
+  setProgress(done, TRACKS.length);
   setTrackButtonsDisabled(false);
 }
 
@@ -123,44 +153,89 @@ async function cacheAppShell() {
   await cache.addAll(appFiles);
 }
 
+function trackUrl(track) {
+  return new URL(track.src, window.location.href).href;
+}
+
+async function hasCachedTrack(cache, track) {
+  return Boolean(await cache.match(trackUrl(track)));
+}
+
+async function countCachedTracks(cache) {
+  let completed = 0;
+
+  for (const track of TRACKS) {
+    if (await hasCachedTrack(cache, track)) {
+      completed += 1;
+    }
+  }
+
+  return completed;
+}
+
 async function preloadAudio() {
+  if (preloadInProgress) {
+    return;
+  }
+
   if (!('caches' in window)) {
+    setErrorState(0);
     throw new Error('Cache Storage is unavailable');
   }
 
-  const cache = await caches.open(AUDIO_CACHE);
+  preloadInProgress = true;
   let completed = 0;
-  setProgress(completed, TRACKS.length);
 
-  for (const track of TRACKS) {
-    elements.downloadText.textContent = `Загружаю ${track.title}: ${completed + 1} из ${TRACKS.length}`;
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    completed = await countCachedTracks(cache);
 
-    const request = new Request(track.src, { cache: 'reload' });
-    const cached = await cache.match(track.src);
+    setLoadingState(completed);
+    setProgress(completed, TRACKS.length);
 
-    if (!cached) {
-      const response = await fetch(request);
-      if (!response.ok) {
-        throw new Error(`${track.title}: ${response.status}`);
-      }
-      await cache.put(track.src, response.clone());
+    if (completed === TRACKS.length) {
+      setReadyState();
+      return;
     }
 
-    completed += 1;
-    setProgress(completed, TRACKS.length);
+    for (const track of TRACKS) {
+      const url = trackUrl(track);
+      const cached = await cache.match(url);
+
+      if (!cached) {
+        elements.downloadText.textContent = `Загружаю ${track.title}: ${completed + 1} из ${TRACKS.length}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`${track.title}: ${response.status}`);
+        }
+
+        await cache.put(url, response.clone());
+        completed += 1;
+        setProgress(completed, TRACKS.length);
+      }
+    }
+
+    setReadyState();
+  } catch (error) {
+    setErrorState(completed);
+    throw error;
+  } finally {
+    preloadInProgress = false;
   }
 }
 
 async function getTrackBlobUrl(track) {
   const cache = await caches.open(AUDIO_CACHE);
-  let response = await cache.match(track.src);
+  const url = trackUrl(track);
+  let response = await cache.match(url);
 
   if (!response) {
-    response = await fetch(track.src);
+    response = await fetch(url);
     if (!response.ok) {
       throw new Error(`${track.title}: ${response.status}`);
     }
-    await cache.put(track.src, response.clone());
+    await cache.put(url, response.clone());
   }
 
   const blob = await response.blob();
@@ -237,17 +312,19 @@ function setupInstallUi() {
   });
 }
 
-async function prepareOfflineAudio() {
+async function prepareAppShell() {
   try {
     await registerServiceWorker();
     await cacheAppShell();
-    await preloadAudio();
-    setReadyState();
   } catch (error) {
-    elements.downloadTitle.textContent = 'Загрузка не завершилась';
-    elements.downloadText.textContent = 'Нужен интернет для первой загрузки аудио.';
-    elements.badge.textContent = 'Не готово';
-    setTrackButtonsDisabled(false);
+    console.warn('App shell cache failed', error);
+  }
+}
+
+async function prepareOfflineAudio() {
+  try {
+    await preloadAudio();
+  } catch (error) {
     console.error(error);
   }
 }
@@ -255,4 +332,21 @@ async function prepareOfflineAudio() {
 renderTracks();
 setupInstallUi();
 elements.audio.addEventListener('ended', playNextTrack);
+elements.retryDownload?.addEventListener('click', prepareOfflineAudio);
+window.addEventListener('online', () => {
+  if (!audioReady) {
+    prepareOfflineAudio();
+  }
+});
+window.addEventListener('pageshow', () => {
+  if (!audioReady) {
+    prepareOfflineAudio();
+  }
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !audioReady) {
+    prepareOfflineAudio();
+  }
+});
+prepareAppShell();
 prepareOfflineAudio();
