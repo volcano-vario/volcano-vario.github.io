@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kore">
+  <rect width="512" height="512" rx="96" fill="#0f4c5c"/>
+  <circle cx="384" cy="126" r="54" fill="#d68c45"/>
+  <path fill="#f7f8f6" d="M129 126h70v117l107-117h86L274 254l127 132h-92L199 270v116h-70z"/>
+</svg>
