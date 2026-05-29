@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v34';
+const STATIC_CACHE = 'vario-static-v35';
 
-const VERSIONED_STYLES = '/styles.css?v=34';
-const VERSIONED_APP = '/app.js?v=34';
+const VERSIONED_STYLES = '/styles.css?v=35';
+const VERSIONED_APP = '/app.js?v=35';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -658,6 +658,21 @@ async function getTrackBlobUrl(track) {
   return URL.createObjectURL(blob);
 }
 
+async function setAudioSource(track) {
+  if (activeObjectUrl) {
+    URL.revokeObjectURL(activeObjectUrl);
+    activeObjectUrl = undefined;
+  }
+
+  if (shouldPreloadAudio()) {
+    activeObjectUrl = await getTrackBlobUrl(track);
+    elements.audio.src = activeObjectUrl;
+    return;
+  }
+
+  elements.audio.src = trackUrl(track);
+}
+
 async function playTrack(index) {
   const track = currentTracks[index];
   if (!track) {
@@ -669,13 +684,8 @@ async function playTrack(index) {
   elements.currentTitle.textContent = track.title;
   markActiveTrack(index);
 
-  if (activeObjectUrl) {
-    URL.revokeObjectURL(activeObjectUrl);
-  }
-
   try {
-    activeObjectUrl = await getTrackBlobUrl(track);
-    elements.audio.src = activeObjectUrl;
+    await setAudioSource(track);
     await elements.audio.play();
     setPlayerDisabled(false);
     updatePlayerUi();
