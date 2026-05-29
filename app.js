@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v32';
+const STATIC_CACHE = 'vario-static-v34';
 
-const VERSIONED_STYLES = '/styles.css?v=32';
-const VERSIONED_APP = '/app.js?v=32';
+const VERSIONED_STYLES = '/styles.css?v=34';
+const VERSIONED_APP = '/app.js?v=34';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -417,7 +417,7 @@ function renderPage() {
   elements.pageTitle.textContent = currentPage.title;
   elements.pageDescription.textContent = currentPage.subtitle;
   elements.currentTitle.textContent = 'Выберите запись';
-  elements.badge.textContent = 'Подготовка';
+  elements.badge.textContent = shouldPreloadAudio() ? 'Подготовка' : 'В браузере';
   elements.download.hidden = !shouldPreloadAudio();
   elements.player.hidden = false;
   elements.trackSection.hidden = false;
@@ -512,7 +512,7 @@ async function setInstallFirstState() {
   elements.download.hidden = true;
   elements.downloadTitle.textContent = 'Загрузка в приложении';
   elements.downloadText.textContent = 'Аудио загрузится после открытия с иконки приложения.';
-  elements.badge.textContent = 'Установка';
+  elements.badge.textContent = 'В браузере';
   elements.badge.classList.remove('is-ready');
   elements.retryDownload.hidden = true;
   setProgress(done, currentTracks.length);
@@ -581,12 +581,28 @@ async function preloadAudio() {
       return;
     }
 
+    const tracksToFetch = [];
+
     for (const track of currentTracks) {
       const url = trackUrl(track);
       const cached = await cache.match(url);
 
       if (!cached) {
-        elements.downloadText.textContent = `Загружаю ${track.title}: ${completed + 1} из ${currentTracks.length}`;
+        tracksToFetch.push(track);
+      } else {
+        logDebug('audio already cached', { track: track.number });
+      }
+    }
+
+    let nextTrackIndex = 0;
+    const workerCount = Math.min(3, tracksToFetch.length);
+
+    async function fetchNextTrack() {
+      while (nextTrackIndex < tracksToFetch.length) {
+        const track = tracksToFetch[nextTrackIndex];
+        nextTrackIndex += 1;
+        const url = trackUrl(track);
+        elements.downloadText.textContent = `Загружаю записи: ${completed + 1} из ${currentTracks.length}`;
         logDebug('audio fetch start', { track: track.number, url });
 
         const response = await fetch(url);
@@ -603,10 +619,10 @@ async function preloadAudio() {
           total: currentTracks.length,
           status: response.status,
         });
-      } else {
-        logDebug('audio already cached', { track: track.number });
       }
     }
+
+    await Promise.all(Array.from({ length: workerCount }, fetchNextTrack));
 
     setReadyState();
     logDebugSnapshot('audio preload done');
