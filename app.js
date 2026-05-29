@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v36';
+const STATIC_CACHE = 'vario-static-v38';
 
-const VERSIONED_STYLES = '/styles.css?v=36';
-const VERSIONED_APP = '/app.js?v=36';
+const VERSIONED_STYLES = '/styles.css?v=38';
+const VERSIONED_APP = '/app.js?v=38';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -80,6 +80,7 @@ const appFiles = [
   '/favicon.ico?v=16',
   '/icon-192.png?v=16',
   '/icon-512.png?v=16',
+  '/data/docs/map-preview.png',
 ];
 
 const elements = {

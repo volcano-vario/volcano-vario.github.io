@@ -371,6 +371,43 @@ body[data-page="home"] {
   display: none;
 }
 
+.map-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0)),
+    var(--paper-2);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.map-card__image {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  border: 1px solid rgba(29, 47, 35, 0.14);
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--paper);
+}
+
+.map-card__copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.map-card__copy h2 {
+  color: var(--ink);
+  font-size: 1.18rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
 .install--ios {
   display: grid;
   gap: 10px;
@@ -832,8 +869,18 @@ audio {
 
   .download,
   .player,
-  .track-section {
+  .track-section,
+  .map-card {
     margin-top: 16px;
+  }
+
+  .map-card__image {
+    max-height: 520px;
+  }
+
+  .download,
+  .player,
+  .track-section {
     padding: 18px;
   }
 
@@ -883,8 +930,13 @@ audio {
   .hero,
   .download,
   .player,
-  .track-section {
+  .track-section,
+  .map-card {
     padding: 12px;
+  }
+
+  .map-card__image {
+    max-height: 380px;
   }
 
   .topbar {

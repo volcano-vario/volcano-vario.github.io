@@ -35,4 +35,5 @@ tmp/
 temp/
 
 # Local design/source references not used by the web app
-data/docs/
+data/docs/*
+!data/docs/map-preview.png

@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'vario-static-v36';
+const STATIC_CACHE = 'vario-static-v38';
 const AUDIO_CACHE = 'vario-audio-v1';
 const AUDIO_CACHES = [
   AUDIO_CACHE,
@@ -16,8 +16,8 @@ const APP_SHELL = [
   '/ence/index.html',
   '/geo/',
   '/geo/index.html',
-  '/styles.css?v=36',
-  '/app.js?v=36',
+  '/styles.css?v=38',
+  '/app.js?v=38',
   '/sw.js',
   '/manifest.webmanifest',
   '/manifest-kore.webmanifest',
@@ -26,6 +26,7 @@ const APP_SHELL = [
   '/favicon.ico?v=16',
   '/icon-192.png?v=16',
   '/icon-512.png?v=16',
+  '/data/docs/map-preview.png',
 ];
 
 self.addEventListener('install', (event) => {
