@@ -1,16 +1,31 @@
-const STATIC_CACHE = 'kore-static-v6';
-const AUDIO_CACHE = 'kore-audio-v1';
+const STATIC_CACHE = 'vario-static-v32';
+const AUDIO_CACHE = 'vario-audio-v1';
+const AUDIO_CACHES = [
+  AUDIO_CACHE,
+  'vario-audio-kore-v1',
+  'vario-audio-ence-v1',
+  'vario-audio-geo-v1',
+];
 
 const APP_SHELL = [
-  './',
-  './index.html',
-  './styles.css?v=6',
-  './app.js?v=6',
-  './sw.js',
-  './manifest.webmanifest',
-  './icon.svg',
-  './icon-192.png',
-  './icon-512.png',
+  '/',
+  '/index.html',
+  '/kore/',
+  '/kore/index.html',
+  '/ence/',
+  '/ence/index.html',
+  '/geo/',
+  '/geo/index.html',
+  '/styles.css?v=32',
+  '/app.js?v=32',
+  '/sw.js',
+  '/manifest.webmanifest',
+  '/manifest-kore.webmanifest',
+  '/manifest-ence.webmanifest',
+  '/manifest-geo.webmanifest',
+  '/favicon.ico?v=16',
+  '/icon-192.png?v=16',
+  '/icon-512.png?v=16',
 ];
 
 self.addEventListener('install', (event) => {
@@ -22,7 +37,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  const expectedCaches = new Set([STATIC_CACHE, AUDIO_CACHE]);
+  const expectedCaches = new Set([STATIC_CACHE, ...AUDIO_CACHES]);
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => Promise.all(
@@ -45,7 +60,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(networkFirst(event.request, STATIC_CACHE, './index.html'));
+    event.respondWith(networkFirst(event.request, STATIC_CACHE, '/index.html'));
     return;
   }
 

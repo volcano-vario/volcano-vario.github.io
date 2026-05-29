@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#193521">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Вулкан Варио">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest-ence.webmanifest">
+    <link rel="icon" href="/favicon.ico?v=16" sizes="any">
+    <link rel="apple-touch-icon" href="/icon-192.png?v=16">
+    <link rel="stylesheet" href="/styles.css?v=32">
+    <script defer src="/app.js?v=32"></script>
+    <title>Легенда | Вулкан Варио</title>
+  </head>
+  <body>
+    <main class="app" aria-labelledby="app-title">
+      <section class="hero">
+        <header class="topbar">
+          <img class="app-mark" src="/icon-192.png?v=16" width="56" height="56" alt="">
+          <div>
+            <p id="pageEyebrow" class="eyebrow">Аудиогид</p>
+            <h1 id="app-title">Вулкан Варио</h1>
+          </div>
+          <span id="connectionBadge" class="badge">Подготовка</span>
+        </header>
+        <p id="pageDescription" class="page-description"></p>
+      </section>
+
+      <section id="downloadSection" class="download" aria-live="polite">
+        <div class="download__copy">
+          <h2 id="downloadTitle">Загрузка аудио</h2>
+          <p id="downloadText">Подготавливаю записи для работы без интернета.</p>
+        </div>
+        <div id="progressBar" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Прогресс загрузки">
+          <span id="progressFill"></span>
+        </div>
+        <button id="retryDownload" class="secondary-button" type="button" hidden>Повторить загрузку</button>
+      </section>
+
+      <section id="androidInstall" class="install install--android" hidden>
+        <button id="installButton" class="primary-button" type="button" disabled>Установить</button>
+      </section>
+
+      <section id="iosInstall" class="install install--ios" hidden>
+        <div class="ios-install__header">
+          <span class="ios-install__mark" aria-hidden="true">iOS</span>
+          <div>
+            <p class="eyebrow">Установка на iPhone</p>
+            <h2>На iPhone сохраните аудиогид на экран</h2>
+          </div>
+        </div>
+        <ol class="ios-steps">
+          <li><span>1</span><p>Нажмите «Поделиться» в браузере.</p></li>
+          <li><span>2</span><p>Выберите «На экран "Домой"».</p></li>
+          <li><span>3</span><p>Откройте с иконки и дождитесь «Готово офлайн».</p></li>
+        </ol>
+      </section>
+
+      <section id="playerSection" class="player" aria-label="Плеер">
+        <div class="now-playing">
+          <p class="eyebrow">Сейчас</p>
+          <h2 id="currentTitle">Выберите запись</h2>
+        </div>
+        <div class="audio-player">
+          <button id="playPause" class="player-toggle" type="button" aria-label="Воспроизвести" disabled>
+            <span id="playIcon" aria-hidden="true">▶</span>
+          </button>
+          <div class="player-main">
+            <div id="seekWrap" class="seek-wrap">
+              <div class="seek-track" aria-hidden="true">
+                <span id="seekFill"></span>
+                <span id="seekThumb"></span>
+              </div>
+              <input id="seekBar" class="seek-bar" type="range" min="0" max="100" value="0" step="0.1" aria-label="Позиция записи" disabled>
+            </div>
+            <div class="player-time" aria-hidden="true">
+              <span id="currentTime">0:00</span>
+              <span id="duration">0:00</span>
+            </div>
+          </div>
+        </div>
+        <audio id="audio" preload="metadata"></audio>
+      </section>
+
+      <section id="trackSection" class="track-section" aria-labelledby="track-list-title">
+        <h2 id="track-list-title">Записи</h2>
+        <div id="trackList" class="track-list"></div>
+      </section>
+
+      <section id="debugPanel" class="debug-panel" hidden aria-labelledby="debug-title">
+        <div class="debug-panel__header">
+          <div>
+            <p class="eyebrow">Диагностика</p>
+            <h2 id="debug-title">Лог загрузки</h2>
+          </div>
+          <button id="copyDebug" class="secondary-button debug-panel__copy" type="button">Скопировать</button>
+        </div>
+        <p class="debug-panel__hint">Пришлите этот текст, если аудио не загрузилось.</p>
+        <pre id="debugLog" class="debug-log"></pre>
+      </section>
+    </main>
+  </body>
+</html>

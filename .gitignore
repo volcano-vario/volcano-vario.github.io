@@ -33,3 +33,6 @@ pnpm-debug.log*
 # Temporary files
 tmp/
 temp/
+
+# Local design/source references not used by the web app
+data/docs/
