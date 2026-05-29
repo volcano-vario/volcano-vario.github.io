@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v35';
+const STATIC_CACHE = 'vario-static-v36';
 
-const VERSIONED_STYLES = '/styles.css?v=35';
-const VERSIONED_APP = '/app.js?v=35';
+const VERSIONED_STYLES = '/styles.css?v=36';
+const VERSIONED_APP = '/app.js?v=36';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -24,9 +24,10 @@ const pages = {
     cache: 'vario-audio-kore-v1',
     theme: 'legend',
     eyebrow: 'Экотропа Вулкан Варио',
+    label: 'KORE',
     title: 'Аудиогид «Легенда»',
     subtitle: 'Маршрут по древнему палеовулкану в окружении карельского леса.',
-    installName: 'Легенда',
+    installName: 'Легенда Kore',
     tracks: legendTracks.map(([number, title, koreSrc]) => ({ number, title, src: koreSrc })),
   },
   ence: {
@@ -34,9 +35,10 @@ const pages = {
     cache: 'vario-audio-ence-v1',
     theme: 'legend',
     eyebrow: 'Экотропа Вулкан Варио',
+    label: 'ENCE',
     title: 'Аудиогид «Легенда»',
     subtitle: 'Маршрут по древнему палеовулкану в окружении карельского леса.',
-    installName: 'Легенда',
+    installName: 'Легенда Ence',
     tracks: legendTracks.map(([number, title, , enceSrc]) => ({ number, title, src: enceSrc })),
   },
   geo: {
@@ -95,6 +97,7 @@ const elements = {
   iosInstall: document.querySelector('#iosInstall'),
   pageDescription: document.querySelector('#pageDescription'),
   pageEyebrow: document.querySelector('#pageEyebrow'),
+  pageLabel: document.querySelector('#pageLabel'),
   pageTitle: document.querySelector('#app-title'),
   player: document.querySelector('#playerSection'),
   playIcon: document.querySelector('#playIcon'),
@@ -397,6 +400,7 @@ function renderRouteNav() {
 function renderHome() {
   document.body.dataset.page = 'home';
   elements.pageEyebrow.textContent = 'Экотропа';
+  elements.pageLabel.hidden = true;
   elements.pageTitle.textContent = 'Вулкан Варио';
   elements.pageDescription.textContent = 'Выберите аудиогид маршрута. Каждая страница скачивает свои записи для работы без интернета.';
   elements.badge.textContent = 'Выбор маршрута';
@@ -414,6 +418,8 @@ function renderPage() {
   document.body.dataset.page = currentPage.theme;
   document.title = `${currentPage.title} | Вулкан Варио`;
   elements.pageEyebrow.textContent = currentPage.eyebrow;
+  elements.pageLabel.textContent = currentPage.label || '';
+  elements.pageLabel.hidden = !currentPage.label;
   elements.pageTitle.textContent = currentPage.title;
   elements.pageDescription.textContent = currentPage.subtitle;
   elements.currentTitle.textContent = 'Выберите запись';
