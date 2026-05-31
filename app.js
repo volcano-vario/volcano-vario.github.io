@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v39';
+const STATIC_CACHE = 'vario-static-v40';
 
-const VERSIONED_STYLES = '/styles.css?v=39';
-const VERSIONED_APP = '/app.js?v=39';
+const VERSIONED_STYLES = '/styles.css?v=40';
+const VERSIONED_APP = '/app.js?v=40';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -47,14 +47,14 @@ const pages = {
     title: 'Аудиогид «Геология»',
     subtitle: 'Геологические точки маршрута: рельеф, лавы, расщелины и время Ялгоры.',
     tracks: [
-      { number: 'Г1', title: 'Вступление', src: '/data/audio/ence_geo/poi_1_geo_ence.mp3' },
+      { number: 'Г1', title: 'Вступление', src: '/data/audio/ence_geo/poi_1_geo_ence.mp3?v=2' },
       { number: 'Г2', title: 'Сейсмообвалы', src: '/data/audio/ence_geo/poi_2_geo_ence.mp3' },
-      { number: 'Г3', title: 'Рельеф Ялгоры', src: '/data/audio/ence_geo/poi_3_geo_ence.mp3' },
-      { number: 'Г4', title: 'Лавы Ялгоры', src: '/data/audio/ence_geo/poi_4_geo_ence.mp3' },
+      { number: 'Г3', title: 'Рельеф Ялгоры', src: '/data/audio/ence_geo/poi_3_geo_ence.mp3?v=2' },
+      { number: 'Г4', title: 'Лавы Ялгоры', src: '/data/audio/ence_geo/poi_4_geo_ence.mp3?v=2' },
       { number: 'Г5', title: 'Вариолиты и кварцевые жилы', src: '/data/audio/ence_geo/poi_5_geo_ence.mp3' },
-      { number: 'Г6', title: 'Расщелина', src: '/data/audio/ence_geo/poi_6_geo_ence.mp3' },
+      { number: 'Г6', title: 'Расщелина', src: '/data/audio/ence_geo/poi_6_geo_ence.mp3?v=2' },
       { number: 'Г7', title: 'Озеро', src: '/data/audio/ence_geo/poi_7_geo_ence.mp3' },
-      { number: 'Г8-9', title: 'Дорога', src: '/data/audio/ence_geo/poi_8_9_geo_ence.mp3' },
+      { number: 'Г8-9', title: 'Дорога', src: '/data/audio/ence_geo/poi_8_9_geo_ence.mp3?v=2' },
       { number: 'Г10', title: 'Ялгора и время', src: '/data/audio/ence_geo/poi_10_geo_ence.mp3' },
       { number: 'Г11', title: 'Финал', src: '/data/audio/ence_geo/poi_11_geo_ence.mp3' },
     ],
