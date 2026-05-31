@@ -27,7 +27,6 @@ const pages = {
     label: 'KORE',
     title: 'Аудиогид «Легенда»',
     subtitle: 'Маршрут по древнему палеовулкану в окружении карельского леса.',
-    installName: 'Легенда Kore',
     tracks: legendTracks.map(([number, title, koreSrc]) => ({ number, title, src: koreSrc })),
   },
   ence: {
@@ -38,7 +37,6 @@ const pages = {
     label: 'ENCE',
     title: 'Аудиогид «Легенда»',
     subtitle: 'Маршрут по древнему палеовулкану в окружении карельского леса.',
-    installName: 'Легенда Ence',
     tracks: legendTracks.map(([number, title, , enceSrc]) => ({ number, title, src: enceSrc })),
   },
   geo: {
@@ -48,7 +46,6 @@ const pages = {
     eyebrow: 'Экотропа Вулкан Варио',
     title: 'Аудиогид «Геология»',
     subtitle: 'Геологические точки маршрута: рельеф, лавы, расщелины и время Ялгоры.',
-    installName: 'Геология',
     tracks: [
       { number: 'Г1', title: 'Вступление', src: '/data/audio/ence_geo/poi_1_geo_ence.mp3' },
       { number: 'Г2', title: 'Сейсмообвалы', src: '/data/audio/ence_geo/poi_2_geo_ence.mp3' },
@@ -88,7 +85,6 @@ const appFiles = [
 
 const elements = {
   audio: document.querySelector('#audio'),
-  androidInstall: document.querySelector('#androidInstall'),
   badge: document.querySelector('#connectionBadge'),
   copyDebug: document.querySelector('#copyDebug'),
   currentTitle: document.querySelector('#currentTitle'),
@@ -97,8 +93,6 @@ const elements = {
   download: document.querySelector('#downloadSection'),
   downloadText: document.querySelector('#downloadText'),
   downloadTitle: document.querySelector('#downloadTitle'),
-  installButton: document.querySelector('#installButton'),
-  iosInstall: document.querySelector('#iosInstall'),
   pageDescription: document.querySelector('#pageDescription'),
   pageEyebrow: document.querySelector('#pageEyebrow'),
   pageLabel: document.querySelector('#pageLabel'),
@@ -124,7 +118,6 @@ const currentTracks = currentPage?.tracks || [];
 const debugRequested = new URLSearchParams(window.location.search).has('debug');
 const debugLines = [];
 
-let deferredInstallPrompt;
 let activeObjectUrl;
 let activeTrackIndex = -1;
 let audioReady = false;
@@ -141,18 +134,6 @@ function getPageKey() {
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-
-function isAndroid() {
-  return /Android/i.test(navigator.userAgent);
-}
-
-function isYandexBrowser() {
-  return /YaBrowser\//i.test(navigator.userAgent);
-}
-
-function isIos() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
 function formatBytes(value) {
@@ -191,7 +172,7 @@ function cacheName() {
 }
 
 function shouldPreloadAudio() {
-  return isStandalone() || isYandexBrowser();
+  return Boolean(currentPage);
 }
 
 function setProgress(done, total) {
@@ -509,33 +490,6 @@ function setErrorState(done) {
   showDebugPanel('download error');
 }
 
-async function setInstallFirstState() {
-  const done = await getCachedTrackCount().catch(() => 0);
-
-  if (done === currentTracks.length && currentTracks.length > 0) {
-    audioReady = true;
-    elements.download.hidden = true;
-    elements.badge.textContent = 'В браузере';
-    elements.badge.classList.remove('is-ready');
-    setTrackButtonsDisabled(false);
-    setPlayerDisabled(false);
-    updatePlayerUi();
-    return;
-  }
-
-  audioReady = false;
-  elements.download.hidden = true;
-  elements.downloadTitle.textContent = 'Загрузка в приложении';
-  elements.downloadText.textContent = 'Аудио загрузится после открытия с иконки приложения.';
-  elements.badge.textContent = 'В браузере';
-  elements.badge.classList.remove('is-ready');
-  elements.retryDownload.hidden = true;
-  setProgress(done, currentTracks.length);
-  setTrackButtonsDisabled(false);
-  setPlayerDisabled(currentTracks.length === 0);
-  logDebug('audio preload deferred until standalone app', { cached: done, total: currentTracks.length });
-}
-
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
     logDebug('service worker unavailable');
@@ -742,64 +696,34 @@ function playNextTrack() {
   }
 }
 
-function setupInstallUi() {
-  if (isStandalone() || isYandexBrowser()) {
-    return;
-  }
-
-  const androidDevice = isAndroid();
-
-  if (isIos()) {
-    elements.iosInstall.hidden = false;
-  }
-
-  if (androidDevice) {
-    elements.androidInstall.hidden = false;
-  }
-
-  window.addEventListener('beforeinstallprompt', (event) => {
-    if (!androidDevice) {
-      return;
-    }
-
-    event.preventDefault();
-    deferredInstallPrompt = event;
-    elements.androidInstall.hidden = false;
-    elements.installButton.disabled = false;
-    logDebug('beforeinstallprompt received');
-  });
-
-  elements.installButton.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) {
-      return;
-    }
-
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    logDebug('install prompt finished');
-    deferredInstallPrompt = undefined;
-    elements.installButton.disabled = true;
-  });
-}
-
 async function prepareAppShell() {
   try {
     logDebug('prepare app shell start');
     await registerServiceWorker();
     await cacheAppShell();
+    return true;
   } catch (error) {
     logDebug('prepare app shell failed', { error: error.message, name: error.name });
     console.warn('App shell cache failed', error);
+    return false;
   }
 }
 
 async function prepareOfflineAudio() {
-  if (isYandexBrowser() && appShellReadyPromise) {
-    await appShellReadyPromise;
+  let appShellReady = true;
+
+  if (appShellReadyPromise) {
+    appShellReady = await appShellReadyPromise;
   }
 
-  if (!shouldPreloadAudio()) {
-    await setInstallFirstState();
+  if (!currentPage) {
+    return;
+  }
+
+  if (!appShellReady) {
+    const done = await getCachedTrackCount().catch(() => 0);
+    setErrorState(done);
+    logDebug('audio preload skipped: app shell unavailable', { cached: done, total: currentTracks.length });
     return;
   }
 
@@ -816,7 +740,6 @@ logDebugSnapshot('initial snapshot');
 renderRouteNav();
 renderPage();
 renderTracks();
-setupInstallUi();
 elements.audio.addEventListener('ended', playNextTrack);
 elements.audio.addEventListener('durationchange', updatePlayerUi);
 elements.audio.addEventListener('loadedmetadata', updatePlayerUi);
@@ -860,9 +783,4 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 appShellReadyPromise = prepareAppShell();
-
-if (isYandexBrowser()) {
-  appShellReadyPromise.then(prepareOfflineAudio);
-} else {
-  prepareOfflineAudio();
-}
+appShellReadyPromise.then(prepareOfflineAudio);
