@@ -143,6 +143,10 @@ function isAndroid() {
   return /Android/i.test(navigator.userAgent);
 }
 
+function isYandexBrowser() {
+  return /YaBrowser\//i.test(navigator.userAgent);
+}
+
 function isIos() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
@@ -183,7 +187,7 @@ function cacheName() {
 }
 
 function shouldPreloadAudio() {
-  return isStandalone();
+  return isStandalone() || isYandexBrowser();
 }
 
 function setProgress(done, total) {
@@ -735,7 +739,7 @@ function playNextTrack() {
 }
 
 function setupInstallUi() {
-  if (isStandalone()) {
+  if (isStandalone() || isYandexBrowser()) {
     return;
   }
 
