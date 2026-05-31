@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v38';
+const STATIC_CACHE = 'vario-static-v39';
 
-const VERSIONED_STYLES = '/styles.css?v=38';
-const VERSIONED_APP = '/app.js?v=38';
+const VERSIONED_STYLES = '/styles.css?v=39';
+const VERSIONED_APP = '/app.js?v=39';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -77,6 +77,9 @@ const appFiles = [
   VERSIONED_APP,
   '/sw.js',
   '/manifest.webmanifest',
+  '/manifest-kore.webmanifest',
+  '/manifest-ence.webmanifest',
+  '/manifest-geo.webmanifest',
   '/favicon.ico?v=16',
   '/icon-192.png?v=16',
   '/icon-512.png?v=16',
@@ -128,6 +131,7 @@ let audioReady = false;
 let debugCopyReady = false;
 let debugVisible = debugRequested;
 let isSeeking = false;
+let appShellReadyPromise;
 let preloadInProgress = false;
 
 function getPageKey() {
@@ -790,6 +794,10 @@ async function prepareAppShell() {
 }
 
 async function prepareOfflineAudio() {
+  if (isYandexBrowser() && appShellReadyPromise) {
+    await appShellReadyPromise;
+  }
+
   if (!shouldPreloadAudio()) {
     await setInstallFirstState();
     return;
@@ -851,5 +859,10 @@ document.addEventListener('visibilitychange', () => {
     prepareOfflineAudio();
   }
 });
-prepareAppShell();
-prepareOfflineAudio();
+appShellReadyPromise = prepareAppShell();
+
+if (isYandexBrowser()) {
+  appShellReadyPromise.then(prepareOfflineAudio);
+} else {
+  prepareOfflineAudio();
+}
