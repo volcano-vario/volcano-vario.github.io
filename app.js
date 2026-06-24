@@ -1,8 +1,8 @@
 const AUDIO_CACHE = 'vario-audio-v1';
-const STATIC_CACHE = 'vario-static-v40';
+const STATIC_CACHE = 'vario-static-v41';
 
-const VERSIONED_STYLES = '/styles.css?v=40';
-const VERSIONED_APP = '/app.js?v=40';
+const VERSIONED_STYLES = '/styles.css?v=41';
+const VERSIONED_APP = '/app.js?v=41';
 
 const legendTracks = [
   ['1', 'Вступление', '/data/audio/kore/poi_1_kore.mp3', '/data/audio/ence/poi_1_ence.mp3'],
@@ -685,15 +685,11 @@ async function togglePlayback() {
   }
 }
 
-function playNextTrack() {
-  if (activeTrackIndex < 0) {
-    return;
-  }
-
-  const nextIndex = activeTrackIndex + 1;
-  if (nextIndex < currentTracks.length) {
-    playTrack(nextIndex);
-  }
+function handleTrackEnded() {
+  updatePlayerUi();
+  logDebug('playback ended', {
+    track: currentTracks[activeTrackIndex]?.number,
+  });
 }
 
 async function prepareAppShell() {
@@ -740,7 +736,7 @@ logDebugSnapshot('initial snapshot');
 renderRouteNav();
 renderPage();
 renderTracks();
-elements.audio.addEventListener('ended', playNextTrack);
+elements.audio.addEventListener('ended', handleTrackEnded);
 elements.audio.addEventListener('durationchange', updatePlayerUi);
 elements.audio.addEventListener('loadedmetadata', updatePlayerUi);
 elements.audio.addEventListener('pause', updatePlayerUi);

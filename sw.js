@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'vario-static-v40';
+const STATIC_CACHE = 'vario-static-v41';
 const AUDIO_CACHE = 'vario-audio-v1';
 const AUDIO_CACHES = [
   AUDIO_CACHE,
@@ -16,8 +16,8 @@ const APP_SHELL = [
   '/ence/index.html',
   '/geo/',
   '/geo/index.html',
-  '/styles.css?v=40',
-  '/app.js?v=40',
+  '/styles.css?v=41',
+  '/app.js?v=41',
   '/sw.js',
   '/manifest.webmanifest',
   '/manifest-kore.webmanifest',
